@@ -7,7 +7,8 @@ import torch.optim as optim
 import torch.utils.data
 import torch.nn.functional as F
 import time
-from dataloader import KITTILoader as DA
+from dataloader import CarlaLoader as DA
+from dataloader import KITTIloader2012 as ls
 import utils.logger as logger
 import torch.backends.cudnn as cudnn
 
@@ -48,11 +49,6 @@ parser.add_argument('--pretrained', type=str, default='results/pretrained_anynet
 
 
 args = parser.parse_args()
-
-if args.datatype == '2015':
-    from dataloader import KITTIloader2015 as ls
-elif args.datatype == '2012':
-    from dataloader import KITTIloader2012 as ls
 
 
 def main():

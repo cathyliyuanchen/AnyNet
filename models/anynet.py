@@ -79,7 +79,7 @@ class AnyNet(nn.Module):
         flo: [B, 2, H, W] flow
         """
         B, C, H, W = x.size()
-        # mesh grid
+        # mesh gridfeat_l
         xx = torch.arange(0, W).view(1, -1).repeat(H, 1)
         yy = torch.arange(0, H).view(-1, 1).repeat(1, W)
         xx = xx.view(1, 1, H, W).repeat(B, 1, 1, 1)
@@ -104,8 +104,9 @@ class AnyNet(nn.Module):
         assert maxdisp % stride == 0  # Assume maxdisp is multiple of stride
         cost = torch.zeros(feat_l.size()[0], maxdisp//stride, feat_l.size()[2], feat_l.size()[3]).cuda()
         for i in range(0, maxdisp, stride):
-            cost[:, i//stride, :, :i] = feat_l[:, :, :, :i].abs().sum(1)
+#             cost[:, i//stride, :, :i] = feat_l[:, :, :, :i].abs().sum(1)
             if i > 0:
+                cost[:, i//stride, :, :i] = feat_l[:, :, :, :i].abs().sum(1)
                 cost[:, i//stride, :, i:] = torch.norm(feat_l[:, :, :, i:] - feat_r[:, :, :, :-i], 1, 1)
             else:
                 cost[:, i//stride, :, i:] = torch.norm(feat_l[:, :, :, :] - feat_r[:, :, :, :], 1, 1)
@@ -116,7 +117,7 @@ class AnyNet(nn.Module):
         size = feat_l.size()
         batch_disp = disp[:,None,:,:,:].repeat(1, maxdisp*2-1, 1, 1, 1).view(-1,1,size[-2], size[-1])
         batch_shift = torch.arange(-maxdisp+1, maxdisp).repeat(size[0])[:,None,None,None].cuda() * stride
-        batch_disp = batch_disp - batch_shift
+        batch_disp = batch_disp - batch_shift.float()
         batch_feat_l = feat_l[:,None,:,:,:].repeat(1,maxdisp*2-1, 1, 1, 1).view(-1,size[-3],size[-2], size[-1])
         batch_feat_r = feat_r[:,None,:,:,:].repeat(1,maxdisp*2-1, 1, 1, 1).view(-1,size[-3],size[-2], size[-1])
         cost = torch.norm(batch_feat_l - self.warp(batch_feat_r, batch_disp), 1, 1)
@@ -178,5 +179,5 @@ class disparityregression2(nn.Module):
 
     def forward(self, x):
         disp = self.disp.repeat(x.size()[0], 1, x.size()[2], x.size()[3])
-        out = torch.sum(x * disp, 1, keepdim=True)
+        out = torch.sum(x * disp.float(), 1, keepdim=True)
         return out

@@ -7,8 +7,10 @@ import torch.optim as optim
 import torch.utils.data
 import torch.nn.functional as F
 import time
-from dataloader import listflowfile as lt
-from dataloader import SecenFlowLoader as DA
+import numpy as np
+import imageio
+from dataloader import CarlaSplit as lt
+from dataloader import CarlaLoader as DA
 import utils.logger as logger
 
 import models.anynet
@@ -127,7 +129,7 @@ def train(dataloader, model, optimizer, log, epoch=0):
 
         for idx in range(stages):
             losses[idx].update(loss[idx].item()/args.loss_weights[idx])
-
+        
         if batch_idx % args.print_freq:
             info_str = ['Stage {} = {:.2f}({:.2f})'.format(x, losses[x].val, losses[x].avg) for x in range(stages)]
             info_str = '\t'.join(info_str)
@@ -145,8 +147,9 @@ def test(dataloader, model, log):
     length_loader = len(dataloader)
 
     model.eval()
-
+    
     for batch_idx, (imgL, imgR, disp_L) in enumerate(dataloader):
+        start = time.time()
         imgL = imgL.float().cuda()
         imgR = imgR.float().cuda()
         disp_L = disp_L.float().cuda()
@@ -159,9 +162,16 @@ def test(dataloader, model, log):
                     EPEs[x].update(0)
                     continue
                 output = torch.squeeze(outputs[x], 1)
-                output = output[:, 4:, :]
+#                 output = output[:, 4:, :]
+#                 result = (np.array(output)[0]*255).astype(np.uint8)
+#                 imageio.imwrite("result-id{}-stage{}.png".format(batch_idx, x), result)
+                print("Mask matched")
                 EPEs[x].update((output[mask] - disp_L[mask]).abs().mean())
-
+            
+#             gt = (np.array(disp_L[0])*255).astype(np.uint8)
+#             imageio.imwrite("gt-id{}.png".format(batch_idx), gt)
+        end = time.time()
+        print(end-start)
         info_str = '\t'.join(['Stage {} = {:.2f}({:.2f})'.format(x, EPEs[x].val, EPEs[x].avg) for x in range(stages)])
 
         log.info('[{}/{}] {}'.format(
