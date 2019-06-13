@@ -14,7 +14,7 @@ IMG_EXTENSIONS = [
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
-def dataloader(filepath, log):
+def dataloader(filepath):
 
   left_fold  = 'image_2/'
   right_fold = 'image_3/'
@@ -27,7 +27,6 @@ def dataloader(filepath, log):
   np.random.shuffle(all_index)
   vallist = all_index[:40]
 
-  log.info(vallist)
   val = ['{:06d}_10.png'.format(x) for x in vallist]
   train = [x for x in image if x not in val]
 

@@ -7,20 +7,21 @@ import torch.optim as optim
 import torch.utils.data
 import torch.nn.functional as F
 import time
-from dataloader import CarlaLoader as DA
-from dataloader import KITTIloader2012 as ls
+import numpy as np
+import imageio
+from matplotlib import pyplot as plt
 import utils.logger as logger
 import torch.backends.cudnn as cudnn
 
 import models.anynet
 
-parser = argparse.ArgumentParser(description='Anynet fintune on KITTI')
+parser = argparse.ArgumentParser(description='Anynet finetune on KITTI')
 parser.add_argument('--maxdisp', type=int, default=192,
                     help='maxium disparity')
 parser.add_argument('--loss_weights', type=float, nargs='+', default=[0.25, 0.5, 1., 1.])
 parser.add_argument('--max_disparity', type=int, default=192)
 parser.add_argument('--maxdisplist', type=int, nargs='+', default=[12, 3, 3])
-parser.add_argument('--datatype', default='2015',
+parser.add_argument('--datatype', default='kitti',
                     help='datapath')
 parser.add_argument('--datapath', default=None, help='datapath')
 parser.add_argument('--epochs', type=int, default=300,
@@ -50,6 +51,14 @@ parser.add_argument('--pretrained', type=str, default='results/pretrained_anynet
 
 args = parser.parse_args()
 
+if args.datatype == 'kitti':
+    from dataloader import KITTILoader as DA
+    from dataloader import KITTIloader2015_ft as ls
+    args.datapath = 'kitti/training/'
+elif args.datatype == 'carla':
+    from dataloader import CarlaLoader as DA
+    from dataloader import CarlaSplit_ft as ls
+    args.datapath = 'dataset/'
 
 def main():
     global args
@@ -184,6 +193,18 @@ def test(dataloader, model, log):
             for x in range(stages):
                 output = torch.squeeze(outputs[x], 1)
                 D1s[x].update(error_estimating(output, disp_L).item())
+                if batch_idx==0:
+#                     print("x=" + str(x))
+#                     print("output")
+#                     print(np.array(output.cpu())[0])
+#                     print("disp_L")
+#                     print(np.array(disp_L.cpu())[0])
+#                     print('error')
+#                     print(np.array(disp_L.cpu())[0] - np.array(output.cpu())[0])
+                    plt.imshow(np.array(output.cpu())[0], cmap="viridis")
+                    plt.savefig("result-id{}-stage{}.png".format(batch_idx, x))
+#                 result = (np.array(output.cpu())[0]).astype(np.uint8)
+#                 imageio.imwrite("result-id{}-stage{}.png".format(batch_idx, x), result)
 
         info_str = '\t'.join(['Stage {} = {:.4f}({:.4f})'.format(x, D1s[x].val, D1s[x].avg) for x in range(stages)])
 

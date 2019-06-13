@@ -25,8 +25,8 @@ def dataloader(filepath):
   image = [str(0)] + [str(i) for i in range(2,64)]
   random.shuffle(image)
 
-  train = image[:1]
-  val   = image[:1]
+  train = image[:]
+  val   = image[50:]
 
   left_train  = [filepath+left_fold+'carla-left-'+img+'.png' for img in train]
   right_train = [filepath+right_fold+'carla-right-'+img+'.png' for img in train]

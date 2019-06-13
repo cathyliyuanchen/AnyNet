@@ -9,8 +9,7 @@ import torch.nn.functional as F
 import time
 import numpy as np
 import imageio
-from dataloader import CarlaSplit as lt
-from dataloader import CarlaLoader as DA
+
 import utils.logger as logger
 
 import models.anynet
@@ -19,7 +18,9 @@ parser = argparse.ArgumentParser(description='AnyNet with Flyingthings3d')
 parser.add_argument('--maxdisp', type=int, default=192, help='maxium disparity')
 parser.add_argument('--loss_weights', type=float, nargs='+', default=[0.25, 0.5, 1., 1.])
 parser.add_argument('--maxdisplist', type=int, nargs='+', default=[12, 3, 3])
-parser.add_argument('--datapath', default='dataset/',
+parser.add_argument('--datapath', default=None,
+                    help='datapath')
+parser.add_argument('--datatype', default='kitti',
                     help='datapath')
 parser.add_argument('--epochs', type=int, default=10,
                     help='number of epochs to train')
@@ -34,7 +35,7 @@ parser.add_argument('--resume', type=str, default=None,
 parser.add_argument('--lr', type=float, default=5e-4,
                     help='learning rate')
 parser.add_argument('--with_spn', action='store_true', help='with spn network or not')
-parser.add_argument('--print_freq', type=int, default=5, help='print frequence')
+parser.add_argument('--print_freq', type=int, default=10, help='print frequence')
 parser.add_argument('--init_channels', type=int, default=1, help='initial channels for 2d feature extractor')
 parser.add_argument('--nblocks', type=int, default=2, help='number of layers in each stage')
 parser.add_argument('--channels_3d', type=int, default=4, help='number of initial channels of the 3d network')
@@ -45,6 +46,14 @@ parser.add_argument('--spn_init_channels', type=int, default=8, help='initial ch
 
 args = parser.parse_args()
 
+if args.datatype == 'kitti':
+    from dataloader import KITTILoader as DA
+    from dataloader import KITTIloader2015 as lt
+    args.datapath = 'kitti/training/'
+elif args.datatype == 'carla':
+    from dataloader import CarlaLoader as DA
+    from dataloader import CarlaSplit as lt
+    args.datapath = 'dataset/'
 
 def main():
     global args
@@ -130,7 +139,7 @@ def train(dataloader, model, optimizer, log, epoch=0):
         for idx in range(stages):
             losses[idx].update(loss[idx].item()/args.loss_weights[idx])
         
-        if batch_idx % args.print_freq:
+        if batch_idx % args.print_freq == 0:
             info_str = ['Stage {} = {:.2f}({:.2f})'.format(x, losses[x].val, losses[x].avg) for x in range(stages)]
             info_str = '\t'.join(info_str)
 
@@ -163,9 +172,9 @@ def test(dataloader, model, log):
                     continue
                 output = torch.squeeze(outputs[x], 1)
 #                 output = output[:, 4:, :]
-#                 result = (np.array(output)[0]*255).astype(np.uint8)
+                result = (np.array(output)[0]*255).astype(np.uint8)
 #                 imageio.imwrite("result-id{}-stage{}.png".format(batch_idx, x), result)
-                print("Mask matched")
+#                 print("Mask matched")
                 EPEs[x].update((output[mask] - disp_L[mask]).abs().mean())
             
 #             gt = (np.array(disp_L[0])*255).astype(np.uint8)
