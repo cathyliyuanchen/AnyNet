@@ -37,7 +37,7 @@ parser.add_argument('--resume', type=str, default=None,
 parser.add_argument('--lr', type=float, default=5e-4,
                     help='learning rate')
 parser.add_argument('--with_spn', action='store_true', help='with spn network or not')
-parser.add_argument('--print_freq', type=int, default=5, help='print frequence')
+parser.add_argument('--print_freq', type=int, default=10, help='print frequence')
 parser.add_argument('--init_channels', type=int, default=1, help='initial channels for 2d feature extractor')
 parser.add_argument('--nblocks', type=int, default=2, help='number of layers in each stage')
 parser.add_argument('--channels_3d', type=int, default=4, help='number of initial channels 3d feature extractor ')
@@ -123,7 +123,7 @@ def main():
             'optimizer': optimizer.state_dict(),
         }, savefilename)
 
-        if epoch % 1 ==0:
+        if epoch % 5 ==0:
             test(TestImgLoader, model, log)
 
     test(TestImgLoader, model, log)
@@ -165,7 +165,7 @@ def train(dataloader, model, optimizer, log, epoch=0):
         for idx in range(num_out):
             losses[idx].update(loss[idx].item())
 
-        if batch_idx % args.print_freq:
+        if batch_idx % args.print_freq == 0:
             info_str = ['Stage {} = {:.2f}({:.2f})'.format(x, losses[x].val, losses[x].avg) for x in range(num_out)]
             info_str = '\t'.join(info_str)
 
@@ -187,13 +187,15 @@ def test(dataloader, model, log):
         imgL = imgL.float().cuda()
         imgR = imgR.float().cuda()
         disp_L = disp_L.float().cuda()
-
+        if batch_idx in [0,2,4,6,8]:
+            plt.imshow(np.array(disp_L.cpu())[0], cmap="viridis")
+            plt.savefig("result-id{}-gt.png".format(batch_idx))
         with torch.no_grad():
             outputs = model(imgL, imgR)
             for x in range(stages):
                 output = torch.squeeze(outputs[x], 1)
                 D1s[x].update(error_estimating(output, disp_L).item())
-                if batch_idx==0:
+                if batch_idx in[0,2,4,6,8]:
 #                     print("x=" + str(x))
 #                     print("output")
 #                     print(np.array(output.cpu())[0])
@@ -203,6 +205,7 @@ def test(dataloader, model, log):
 #                     print(np.array(disp_L.cpu())[0] - np.array(output.cpu())[0])
                     plt.imshow(np.array(output.cpu())[0], cmap="viridis")
                     plt.savefig("result-id{}-stage{}.png".format(batch_idx, x))
+                    
 #                 result = (np.array(output.cpu())[0]).astype(np.uint8)
 #                 imageio.imwrite("result-id{}-stage{}.png".format(batch_idx, x), result)
 

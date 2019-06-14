@@ -25,9 +25,9 @@ parser.add_argument('--datatype', default='kitti',
 parser.add_argument('--epochs', type=int, default=10,
                     help='number of epochs to train')
 parser.add_argument('--train_bsize', type=int, default=6,
-                    help='batch size for training (default: 12)')
+                    help='batch size for training (default: 6)')
 parser.add_argument('--test_bsize', type=int, default=4,
-                    help='batch size for testing (default: 8)')
+                    help='batch size for testing (default: 4)')
 parser.add_argument('--save_path', type=str, default='results/pretrained_anynet',
                     help='the path of saving checkpoints and log')
 parser.add_argument('--resume', type=str, default=None,
@@ -35,7 +35,7 @@ parser.add_argument('--resume', type=str, default=None,
 parser.add_argument('--lr', type=float, default=5e-4,
                     help='learning rate')
 parser.add_argument('--with_spn', action='store_true', help='with spn network or not')
-parser.add_argument('--print_freq', type=int, default=10, help='print frequence')
+parser.add_argument('--print_freq', type=int, default=5, help='print frequence')
 parser.add_argument('--init_channels', type=int, default=1, help='initial channels for 2d feature extractor')
 parser.add_argument('--nblocks', type=int, default=2, help='number of layers in each stage')
 parser.add_argument('--channels_3d', type=int, default=4, help='number of initial channels of the 3d network')
@@ -172,7 +172,7 @@ def test(dataloader, model, log):
                     continue
                 output = torch.squeeze(outputs[x], 1)
 #                 output = output[:, 4:, :]
-                result = (np.array(output)[0]*255).astype(np.uint8)
+#                 result = (np.array(output.cpu())[0]).astype(np.uint8)
 #                 imageio.imwrite("result-id{}-stage{}.png".format(batch_idx, x), result)
 #                 print("Mask matched")
                 EPEs[x].update((output[mask] - disp_L[mask]).abs().mean())

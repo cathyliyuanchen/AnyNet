@@ -17,25 +17,25 @@ def is_image_file(filename):
 
 def dataloader(filepath, log, args=False):
 
-  left_fold  = 'colored_0/'
-  right_fold = 'colored_1/'
-  disp_noc   = 'disp_occ/'
+    left_fold  = 'colored_0/'
+    right_fold = 'colored_1/'
+    disp_noc   = 'disp_occ/'
 
-#   image = [img for img in os.listdir(filepath+left_fold)]
-  image = [str(i) for i in range(64)]
-  random.shuffle(image)
+    #   image = [img for img in os.listdir(filepath+left_fold)]
+    image = [str(i) for i in range(1, 2146)]
+    random.shuffle(image)
 
-  train = image[:]
-  val   = image[50:]
-  log.info(val)
+    train = image[:]
+    val   = image[2100:]
+    log.info(val)
 
-  left_train  = [filepath+left_fold+'carla-left-'+img+'.png' for img in train]
-  right_train = [filepath+right_fold+'carla-right-'+img+'.png' for img in train]
-  disp_train = [filepath+disp_noc+'carla-depth-'+img+'.png' for img in train]
+    left_train  = [filepath+left_fold+'carla-left-'+img+'00.png' for img in train]
+    right_train = [filepath+right_fold+'carla-right-'+img+'00.png' for img in train]
+    disp_train = [filepath+disp_noc+'carla-depth-'+img+'00.pkl' for img in train]
 
 
-  left_val  = [filepath+left_fold+'carla-left-'+img+'.png' for img in val]
-  right_val = [filepath+right_fold+'carla-right-'+img+'.png' for img in val]
-  disp_val = [filepath+disp_noc+'carla-depth-'+img+'.png' for img in val]
+    left_val  = [filepath+left_fold+'carla-left-'+img+'00.png' for img in val]
+    right_val = [filepath+right_fold+'carla-right-'+img+'00.png' for img in val]
+    disp_val = [filepath+disp_noc+'carla-depth-'+img+'00.pkl' for img in val]
 
-  return left_train, right_train, disp_train, left_val, right_val, disp_val
+    return left_train, right_train, disp_train, left_val, right_val, disp_val

@@ -6,6 +6,7 @@ import torchvision.transforms as transforms
 import random
 from PIL import Image, ImageOps
 import numpy as np
+import pandas as pd
 from . import preprocess
 
 IMG_EXTENSIONS = [
@@ -20,7 +21,7 @@ def default_loader(path):
     return Image.open(path).convert('RGB')
 
 def disparity_loader(path):
-    return Image.open(path)
+    return pd.read_pickle(path)
 
 
 class myImageFloder(data.Dataset):
@@ -41,12 +42,27 @@ class myImageFloder(data.Dataset):
         left_img = self.loader(left)
         right_img = self.loader(right)
         dataL = self.dploader(disp_L)
+        mask = np.logical_and(dataL < 0.1*(np.ones((600, 800))), dataL > 0.002*(np.ones((600, 800)))).astype(int)
+        dataL = (1/3)*np.reciprocal(dataL)*mask
+        dataL = np.ascontiguousarray(dataL,dtype=np.float32)
+        
+        #not cropping
+        left_img = left_img.crop((0, 0, 800, 500))
+        right_img = right_img.crop((0, 0, 800, 500))
+        dataL = dataL.crop((w-800, h-600, w, h))
+        processed = preprocess.get_transform(augment=False)  
+        left_img       = processed(left_img)
+        right_img      = processed(right_img)
+        
+        return left_img, right_img, dataL
         
         if self.training:  
+
+            left_img = left_img.crop((x1, y1, x1 + tw, y1 + th))
+            right_img = right_img.crop((x1, y1, x1 + tw, y1 + th))
+            
             w, h = left_img.size
-#             th, tw = 256, 512
-            # for testing with 1 image
-            th, tw = 600, 800
+            th, tw = 256, 512
 
             x1 = random.randint(0, w - tw)
             y1 = random.randint(0, h - th)
@@ -54,7 +70,6 @@ class myImageFloder(data.Dataset):
             left_img = left_img.crop((x1, y1, x1 + tw, y1 + th))
             right_img = right_img.crop((x1, y1, x1 + tw, y1 + th))
 
-            dataL = np.ascontiguousarray(dataL,dtype=np.float32)/256
             dataL = dataL[y1:y1 + th, x1:x1 + tw]
 
             processed = preprocess.get_transform(augment=False)  
@@ -69,8 +84,7 @@ class myImageFloder(data.Dataset):
             right_img = right_img.crop((w-800, h-600, w, h))
             w1, h1 = left_img.size
             # if uncomment the line that crops the output, 600 should be 596
-            dataL = dataL.crop((w-800, h-600, w, h))
-            dataL = np.ascontiguousarray(dataL,dtype=np.float32)/256
+            dataL = dataL.crop((w-800, h-600, w, h))    
 
             processed = preprocess.get_transform(augment=False)  
             left_img       = processed(left_img)
