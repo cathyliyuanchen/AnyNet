@@ -28,7 +28,7 @@ parser.add_argument('--epochs', type=int, default=300,
                     help='number of epochs to train')
 parser.add_argument('--train_bsize', type=int, default=6,
                     help='batch size for training (default: 6)')
-parser.add_argument('--test_bsize', type=int, default=8,
+parser.add_argument('--test_bsize', type=int, default=4,
                     help='batch size for testing (default: 8)')
 parser.add_argument('--save_path', type=str, default='results/finetune_anynet',
                     help='the path of saving checkpoints and log')
@@ -37,7 +37,7 @@ parser.add_argument('--resume', type=str, default=None,
 parser.add_argument('--lr', type=float, default=5e-4,
                     help='learning rate')
 parser.add_argument('--with_spn', action='store_true', help='with spn network or not')
-parser.add_argument('--print_freq', type=int, default=10, help='print frequence')
+parser.add_argument('--print_freq', type=int, default=5, help='print frequence')
 parser.add_argument('--init_channels', type=int, default=1, help='initial channels for 2d feature extractor')
 parser.add_argument('--nblocks', type=int, default=2, help='number of layers in each stage')
 parser.add_argument('--channels_3d', type=int, default=4, help='number of initial channels 3d feature extractor ')
@@ -123,7 +123,7 @@ def main():
             'optimizer': optimizer.state_dict(),
         }, savefilename)
 
-        if epoch % 5 ==0:
+        if epoch % 1 ==0:
             test(TestImgLoader, model, log)
 
     test(TestImgLoader, model, log)

@@ -26,7 +26,7 @@ def dataloader(filepath, log, args=False):
     random.shuffle(image)
 
     train = image[:]
-    val   = image[7900:]
+    val   = image[7500:]
     log.info(val)
 
     left_train  = [filepath+'carla-left-' +img+'00.png' for img in train]

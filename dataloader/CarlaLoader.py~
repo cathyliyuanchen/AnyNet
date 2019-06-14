@@ -42,8 +42,7 @@ class myImageFloder(data.Dataset):
         left_img = self.loader(left)
         right_img = self.loader(right)
         dataL = self.dploader(disp_L)
-        # mask = np.logical_and(dataL < 0.1*(np.ones((600, 800))), dataL > 0.002*(np.ones((600, 800)))).astype(int)
-        mask = (dataL < 0.1*(np.ones((600, 800)))).astype(int)
+        mask = np.logical_and(dataL < 0.1*(np.ones((600, 800))), dataL > 0.002*(np.ones((600, 800)))).astype(int)
         dataL = (1/3)*np.reciprocal(dataL)*mask
         dataL = np.ascontiguousarray(dataL,dtype=np.float32)
         
