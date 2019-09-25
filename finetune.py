@@ -13,6 +13,8 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import utils.logger as logger
 import torch.backends.cudnn as cudnn
+import pdb
+import cv2
 
 from dataloader.preprocess import disp2depth
 import models.anynet
@@ -63,6 +65,86 @@ elif args.datatype == 'carla':
     args.datapath = '/data/cli/carla_0.9.6_data/'
 
 loss_arr = []
+
+def add_afm_hook(module):
+    """Add hook to module to save average feature map to `module._afm`"""
+    def hook(module, input_, output):
+        if not hasattr(module, '_afm_k'):
+            module._afm_k = 0
+            module._afm = output
+            module._bytetype = 0
+        else:
+            module._afm_k += 1
+            k = module._afm_k
+            n = k + 1.
+            
+            # if output.type() != 'torch.FloatTensor':
+            #     module._bytetype += 1
+            #     output = output.float()
+            module._afm = (k / n * module._afm) + (output / n)
+    module.register_forward_hook(hook)
+
+def save_afm(module, dir='./'):
+    """Saves `module._afm` to disk, in dir"""
+    path = "{}{}".format(dir, ".pth")
+    afm = module._afm.cpu()
+    torch.save(afm, path)
+    vis_afm(afm, dir)
+
+def vis_afm_signed(fm, dir='./', colormap=cv2.COLORMAP_HOT, fname='out'):
+    os.makedirs(dir, exist_ok=True)
+    path = os.path.join(dir, "{}.jpg".format(fname))
+    fm = normalize_fm(fm, colormap)
+    cv2.imwrite(path, fm)
+
+def vis_afm_negative(fm, dir='./', fname='out'):
+    channel_neg = np.maximum(0, -fm)
+    dir_neg = "{}{}".format(dir, "_neg")
+    vis_afm_signed(channel_neg, dir_neg, cv2.COLORMAP_OCEAN, fname)
+
+def vis_afm_positive(fm, dir='./', fname='out'):
+    channel_pos = np.maximum(0, fm)
+    dir_pos = "{}{}".format(dir, "_pos")
+    vis_afm_signed(channel_pos, dir_pos, cv2.COLORMAP_HOT, fname)
+
+def normalize_fm(fm, colormap):
+    fm /= fm.max()
+    fm *= 255
+    fm = fm.astype(np.uint8)
+    fm = cv2.applyColorMap(fm, colormap)
+    return fm
+
+def vis_afm(afm, dir='./', vis_functions=(vis_afm_positive, vis_afm_negative)):
+    """Saves `module._afm` to disk, in dir"""
+    for i, channel in enumerate(afm[0]):
+        channel = channel.data.numpy()
+        for function in vis_functions:
+            function(channel, dir, i)
+
+def add_all_afm_hooks(net):
+    for layer in get_all_afm_layers(list(net.children())[0]):
+        add_afm_hook(layer)
+
+def save_all_afm(net, dir='./'):
+    os.makedirs('output/vis', exist_ok=True)
+    for name, layer in enumerate(get_all_afm_layers(list(net.children())[0])):
+        try:
+            save_afm(layer, dir=os.path.join('output/vis', str(name)))
+            print(layer)
+        except cv2.error:
+            print('error')
+            print(layer)
+
+def get_all_afm_layers(net):
+    """Return generator for layers, pulling out all Conv2d and GroupNorm layers."""
+    if isinstance(net, torch.nn.Conv2d) or isinstance(net, torch.nn.BatchNorm2d):
+        yield net
+    elif len(list(net.children())) == 0:
+        # Some layer we don't care about for afm, e.g. Linear
+        return
+    else:
+        for c in net.children():
+            yield from get_all_afm_layers(c)
 
 def main():
     global args
@@ -190,6 +272,7 @@ def test(dataloader, model, log):
     length_loader = len(dataloader)
 
     model.eval()
+    add_all_afm_hooks(model)
 
     for batch_idx, (imgL, imgR, disp_L, depth) in enumerate(dataloader):
         imgL = imgL.float().cuda()
@@ -223,7 +306,7 @@ def test(dataloader, model, log):
         
         log.info('[{}/{}] {}'.format(
             batch_idx, length_loader, info_str))
-
+    save_all_afm(model)
     info_str = ', '.join(['Stage {}={:.4f}'.format(x, D1s[x].avg) for x in range(stages)])
     log.info('Average test 3-Pixel Error = ' + info_str)
 

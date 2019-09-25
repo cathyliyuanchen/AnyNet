@@ -143,7 +143,7 @@ def save_afm(module, dir='./'):
 def vis_afm_signed(fm, dir='./', colormap=cv2.COLORMAP_HOT, fname='out'):
     os.makedirs(dir, exist_ok=True)
     path = os.path.join(dir, "{}.jpg".format(fname))
-    fm = normalize_fm(fm)
+    fm = normalize_fm(fm, colormap)
     cv2.imwrite(path, fm)
 
 def vis_afm_negative(fm, dir='./', fname='out'):
@@ -156,11 +156,11 @@ def vis_afm_positive(fm, dir='./', fname='out'):
     dir_pos = "{}{}".format(dir, "_pos")
     vis_afm_signed(channel_pos, dir_pos, cv2.COLORMAP_HOT, fname)
 
-def normalize_fm(fm):
+def normalize_fm(fm, colormap):
     fm /= fm.max()
     fm *= 255
     fm = fm.astype(np.uint8)
-    fm = cv2.applyColorMap(fm, cv2.COLORMAP_HOT)
+    fm = cv2.applyColorMap(fm, colormap)
     return fm
 
 def vis_afm(afm, dir='./', vis_functions=(vis_afm_positive, vis_afm_negative)):
