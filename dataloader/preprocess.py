@@ -2,20 +2,32 @@ import torch
 import torchvision.transforms as transforms
 import random
 
-__imagenet_stats = {'mean': [0.491 0.505 0.522],
-                   'std': [0.225 0.222 0.230]}
+__imagenet_stats = {'mean': [0.31563, 0.34412, 0.38686],
+                   'std': [0.15262, 0.14640, 0.15657]}
+
+# __imagenet_stats = {'mean': [0.491, 0.505, 0.522],
+#                    'std': [0.225, 0.222, 0.230]}
 
 #__imagenet_stats = {'mean': [0.5, 0.5, 0.5],
 #                   'std': [0.5, 0.5, 0.5]}
 
 __imagenet_pca = {
-    'eigval': torch.Tensor([0.1503 0.0020 0.0007]),
+    'eigval': torch.Tensor([0.06544, 0.00299, 0.00081]),
     'eigvec': torch.Tensor([
-        [-0.5760 -0.5708 -0.5852]
-        [-0.6021 -0.1880  0.7760]
-        [-0.5530  0.7993 -0.2354]
+        [0.5767, 0.5647, 0.5904],
+        [0.6741, 0.0795, -0.7344],
+        [-0.4616, 0.8215, -0.3348]
     ])
 }
+
+# __imagenet_pca = {
+#     'eigval': torch.Tensor([0.1503, 0.0020, 0.0007]),
+#     'eigvec': torch.Tensor([
+#         [-0.5760, -0.5708, -0.5852],
+#         [-0.6021, -0.1880,  0.7760],
+#         [-0.5530,  0.7993, -0.2354]
+#     ])
+# }
 
 
 def scale_crop(input_size, scale_size=None, normalize=__imagenet_stats):
@@ -83,7 +95,12 @@ def get_transform(name='imagenet', input_size=None,
             return scale_crop(input_size=input_size,
                               scale_size=scale_size, normalize=normalize)
 
+def crop(img):
+    return img[360:900]
 
+
+def disp2depth(disp):
+    return 0.001*np.reciprocal(disp/(0.5*0.5*1920))
 
 
 class Lighting(object):

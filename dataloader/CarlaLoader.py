@@ -43,14 +43,15 @@ class myImageFloder(data.Dataset):
         right_img = self.loader(right)
         dataL = self.dploader(disp_L)
         # mask = np.logical_and(dataL < 0.1*(np.ones((600, 800))), dataL > 0.002*(np.ones((600, 800)))).astype(int)
-        mask = (dataL < 0.1*(np.ones((600, 800)))).astype(int)
-        dataL = (1/3)*np.reciprocal(dataL)*mask
+#         mask = (dataL < 0.1*(np.ones((600, 800)))).astype(int)
+#         dataL = (1/3)*np.reciprocal(dataL)*mask
+        dataL = (0.5 * 0.5 * 1920) * np.reciprocal(1000 * dataL) # camera_dist = 0.5m, focal_len = 0.5m, width = 1920
         dataL = np.ascontiguousarray(dataL,dtype=np.float32)
         
         #not cropping
-        left_img = left_img.crop((0, 0, 800, 500))
-        right_img = right_img.crop((0, 0, 800, 500))
-        dataL = dataL[:500]
+        left_img = left_img.crop((0, 360, 1920, 900))
+        right_img = right_img.crop((0, 360, 1920, 900))
+        dataL = dataL[360:900]
         processed = preprocess.get_transform(augment=False)  
         left_img       = processed(left_img)
         right_img      = processed(right_img)

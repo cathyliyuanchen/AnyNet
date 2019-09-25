@@ -1,0 +1,76 @@
+import torch.utils.data as data
+
+from PIL import Image
+import os
+import os.path
+import numpy as np
+import random
+
+IMG_EXTENSIONS = [
+    '.jpg', '.JPG', '.jpeg', '.JPEG',
+    '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
+]
+
+
+def is_image_file(filename):
+    return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
+
+def dataloader(filepath, log, args=False):
+    f = []
+    f.append(('town01_start1/', '015', 626))
+    f.append(('town01_start10/', '035', 635))
+    f.append(('town01_start20/', '010', 640))
+    f.append(('town01_start30/', '029', 623))
+    f.append(('town02_start1/', '613', 656))
+    f.append(('town02_start10/', '663', 662))
+    f.append(('town02_start20/', '622', 603))
+    f.append(('town02_start30/', '645', 285))
+    f.append(('town03_start1/', '387', 660))
+    f.append(('town03_start10/', '346', 632))
+    f.append(('town03_start20/', '359', 673))
+    f.append(('town04_start1/', '967', 647))
+    f.append(('town04_start10/', '939', 635))
+    f.append(('town04_start20/', '892', 641))
+    f.append(('town05_start1/', '976', 600))
+    f.append(('town05_start10/', '008', 600))
+    f.append(('town05_start20/', '959', 604))
+
+    left_train, right_train, disp_train, left_val, right_val, disp_val = [], [], [], [], [], []
+
+    for folder, code, num in f:
+        image = [str(i) for i in range(10, num+1)]
+        random.shuffle(image)
+        train = image[15:num-9]
+        val   = image[:15]
+        
+        left_train  += [filepath+folder+'carla-center-' +img+code+'.png' for img in train]
+        right_train += [filepath+folder+'carla-right-' +img+code+'.png' for img in train]
+        disp_train  += [filepath+folder+'carla-depth-' +img+code+'.pkl' for img in train]
+
+        left_val  += [filepath+folder+'carla-center-' +img+code+'.png' for img in val]
+        right_val += [filepath+folder+'carla-right-' +img+code+'.png' for img in val]
+        disp_val  += [filepath+folder+'carla-depth-' +img+code+'.pkl' for img in val]
+
+    return left_train, right_train, disp_train, left_val, right_val, disp_val
+    left_fold  = 'colored_0/'
+    right_fold = 'colored_1/'
+    disp_noc   = 'disp_occ/'
+
+    #   image = [img for img in os.listdir(filepath+left_fold)]
+    image = [str(i) for i in range(1, 2700)]
+    random.shuffle(image)
+
+    train = image[:2500]
+    val   = image[2500:]
+    log.info(val)
+
+    left_train  = [filepath+'carla-left-' +img+'.png' for img in train]
+    right_train = [filepath+'carla-center-'+img+'.png' for img in train]
+    disp_train  = [filepath+'carla-depth-'+img+'.pkl' for img in train]
+
+
+    left_val  = [filepath+'carla-left-' +img+'.png' for img in val]
+    right_val = [filepath+'carla-center-'+img+'.png' for img in val]
+    disp_val  = [filepath+'carla-depth-'+img+'.pkl' for img in val]
+
+    return left_train, right_train, disp_train, left_val, right_val, disp_val
